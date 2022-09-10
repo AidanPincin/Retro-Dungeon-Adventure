@@ -1,4 +1,5 @@
 import { grabImage } from "./images.js"
+window.localStorage.clear()
 const canvas = document.querySelector('canvas')
 const ctx = canvas.getContext('2d')
 canvas.height = window.document.defaultView.innerHeight-20
@@ -63,7 +64,19 @@ const classes = {
             const width = grabImage(this.img).width
             const height = grabImage(this.img).height
             const total = width+height
-            ctx.drawImage(grabImage(this.img),this.x-50,this.y-50,200*(width/total),200*(height/total))
+            if(this.x<=0){
+                this.x = 0
+            }
+            if(this.x>=canvas.width-200*(width/total)){
+                this.x=canvas.width-200*(width/total)
+            }
+            if(this.y<=0){
+                this.y = 0
+            }
+            if(this.y>=canvas.height-200*(height/total)){
+                this.y = canvas.height-200*(height/total)
+            }
+            ctx.drawImage(grabImage(this.img),this.x,this.y,200*(width/total),200*(height/total))
         }
     },
 }
@@ -142,4 +155,3 @@ window.addEventListener('keyup',function(e){
         keys[e.key].bool = false
     }
 })
-window.localStorage.clear()
