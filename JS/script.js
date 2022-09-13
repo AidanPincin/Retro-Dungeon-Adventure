@@ -232,7 +232,7 @@ class Renderer{
         ctx.fillStyle = '#000000'
         autoSize('Programmer -- Aidan Pincin',36,75)
         autoSize('Artists:',36,175)
-        const artists = ['Aidan Engle','SLoothS','Zackari Baker']
+        const artists = ['Aidan Engle','SLoothS','Zackari Baker','Makayla Marsh']
         for(let i=0; i<artists.length; i++){
             autoSize(artists[i],36,225+i*36)
         }
