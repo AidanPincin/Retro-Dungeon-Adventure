@@ -1,17 +1,17 @@
 function image(src){const img = new Image(); img.src = src; return img}
+const names = ['player','skeleton']
+const directions = ['R','D','U','L']
 const images = {
-    playerR1: image('Images/playerR1.png'),
-    playerR2: image('Images/playerR2.png'),
-    playerR3: image('Images/playerR3.png'),
-    playerD1: image('Images/playerD1.png'),
-    playerD2: image('Images/playerD2.png'),
-    playerD3: image('Images/playerD3.png'),
-    playerU1: image('Images/playerU1.png'),
-    playerU2: image('Images/playerU2.png'),
-    playerU3: image('Images/playerU3.png'),
-    playerL1: image('Images/playerL1.png'),
-    playerL2: image('Images/playerL2.png'),
-    playerL3: image('Images/playerL3.png')
+    axe: image('Images/axe.png'),
+    shopguy: image('Images/shopguy.png'),
+    sword: image('Images/sword.png')
+}
+for(let i=1; i<4; i++){
+    for(let d=0; d<4; d++){
+        for(let n=0; n<names.length; n++){
+            images[names[n]+directions[d]+i] = image('Images/'+names[n]+directions[d]+i+'.png')
+        }
+    }
 }
 export function grabImage(name){
     return images[name]
