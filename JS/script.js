@@ -1,9 +1,18 @@
-import { grabImage } from "./images.js"
+import { grabImage, loading, maxLoad } from "./images.js"
 window.localStorage.clear()
 const canvas = document.querySelector('canvas')
 const ctx = canvas.getContext('2d')
-canvas.height = window.document.defaultView.innerHeight-20
-canvas.width = window.document.defaultView.innerWidth-20
+const ratio = 1920/1080
+let width = window.document.defaultView.innerWidth-20
+let height = window.document.defaultView.innerHeight-20
+if(height*ratio>width){
+    canvas.height = width/ratio
+    canvas.width = width
+}
+else{
+    canvas.width = height*ratio
+    canvas.height = height
+}
 function setElements(obj,strings,values){
     for(const i in strings){
         obj[strings[i]] = values[i]
@@ -71,8 +80,8 @@ const classes = {
         }
     },
     button: class{
-        constructor(x,y,w,h,txt,color,font,fn,centered=false){
-            setElements(this,['x','y','w','h','txt','color','font','fn'],[x,y,w,h,txt,color,font,fn])
+        constructor(x,y,w,h,txt,color,font,fn,centered=false,doDraw=true){
+            setElements(this,['x','y','w','h','txt','color','font','fn','doDraw'],[x,y,w,h,txt,color,font,fn,doDraw])
             if(this.w==0){
                 ctx.font = this.font+'px Arial';setElements(this,['w','h'],[ctx.measureText(this.txt).width+10,font+10])
                 if(centered){
@@ -200,25 +209,24 @@ class Renderer{
         const b = classes['button']
         this.buttons = {
             'mainMenu': [
-                new b(canvas.width/2,canvas.height/2,0,0,'Play','#00ff00',48,function(){data.changeVar('page','town')},true),
-                new b(canvas.width/2-52.5,canvas.height/2+35,105,50,'How','#00ff00',48,function(){data.changeVar('page','how')}),
-                new b(canvas.width/2-82.5,canvas.height/2+90,165,50,'Credits','#00ff00',48,function(){data.changeVar('page','credits')})
+                new b(canvas.width/2-175/(1920/canvas.width),canvas.height/2-105/(1080/canvas.height),300/(1920/canvas.width),115/(1080/canvas.height),'Play','#00ff00',48,function(){data.changeVar('page','town')},true,false),
+                new b(canvas.width/2-310/(1920/canvas.width),canvas.height/2+18,575/(1920/canvas.width),100/(1080/canvas.height),'Settings','#00ff00',48,function(){data.changeVar('page','settings')},false,false),
+                new b(canvas.width/2-260/(1920/canvas.width),canvas.height/2+135/(1080/canvas.height),485/(1920/canvas.width),100/(1080/canvas.height),'Credits','#00ff00',48,function(){data.changeVar('page','credits')},false,false),
+                new b(canvas.width/2-375/(1920/canvas.width),canvas.height/2+245/(1080/canvas.height),710/(1920/canvas.width),105/(1080/canvas.height),'How','#00ff00',48,function(){data.changeVar('page','how')},false,false)
             ],
             'town':[],
             'how':[new b(canvas.width/2,canvas.height-100,0,0,'Back','#ff0000',48,function(){data.changeVar('page','mainMenu')},true)],
             'credits':[new b(canvas.width/2,canvas.height-100,0,0,'Back','#ff0000',48,function(){data.changeVar('page','mainMenu')},true)],
+            'settings':[new b(canvas.width/2,canvas.height-100,0,0,'Back','#ff0000',48,function(){data.changeVar('page','mainMenu')},true)],
             'characterCreation':[]
         }
     }
     draw(){
         this[data.page]()
-        this.buttons[data.page].forEach(b => b.draw())
+        this.buttons[data.page].forEach(b => {if(b.doDraw){b.draw()}})
     }
     mainMenu(){
-        ctx.font = canvas.width/15.1+'px Arial'
-        ctx.fillStyle = '#000000'
-        const width = ctx.measureText('Welcome To Dungeon Adventure').width
-        ctx.fillText('Welcome To Dungeon Adventure',(canvas.width-width)/2,(canvas.width/15)*0.85)
+        ctx.drawImage(grabImage('titleScreen'),0,0,canvas.width,canvas.height)
     }
     town(){
         data.player.draw()
@@ -227,6 +235,9 @@ class Renderer{
         ctx.fillStyle = '#000000'
         autoSize('WASD keys to move',36,100)
         autoSize("press 'e' to interact with certain objects",36,140)
+    }
+    settings(){
+
     }
     credits(){
         ctx.fillStyle = '#000000'
@@ -249,17 +260,35 @@ class Renderer{
 }
 const data = new Storage(window.localStorage)
 let renderer = new Renderer()
+let loaded = 0
+const id = setInterval(() => {loaded = loading(); if(loaded == maxLoad()){clearInterval(id)}})
 function mainLoop(){
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0,0,canvas.width,canvas.height)
-    renderer.draw()
+    if(loaded<maxLoad()){
+        ctx.fillStyle = '#00ff00'
+        ctx.strokeRect(canvas.width/2-150,canvas.height/2-37.5,300,75)
+        ctx.fillRect(canvas.width/2-148,canvas.height/2-35.5,296*(loaded/maxLoad()),71)
+        ctx.fillStyle = '#000000'
+        ctx.fillText(loaded+'/'+maxLoad(),canvas.width/2-50,canvas.height/2+100)
+    }
+    else{
+        renderer.draw()
+    }
     requestAnimationFrame(mainLoop)
 }
 mainLoop()
 window.addEventListener('resize',function(e){
-    canvas.height = e.currentTarget.innerHeight-20
-    canvas.width = e.currentTarget.innerWidth-20
-    if(canvas.height<400){canvas.height = 400}
+    width = window.document.defaultView.innerWidth-20
+    height = window.document.defaultView.innerHeight-20
+    if(height*ratio>width){
+        canvas.height = width/ratio
+        canvas.width = width
+    }
+    else{
+        canvas.width = height*ratio
+        canvas.height = height
+    }
     renderer = new Renderer()
 })
 window.addEventListener('keydown',function(e){if(keys[e.key] != undefined){keys[e.key].bool = true}})
