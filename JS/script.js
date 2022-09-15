@@ -27,9 +27,7 @@ const keys = {
 const classes = {
     player: class {
         constructor(){
-            setElements(this,['time','name','img','x','y'],[0,undefined,'playerR1',canvas.width/2,canvas.height/2])
-            this.stats = {}
-            setElements(this.stats,['constitution','strength','intelligence','charisma','wisdom','perception','dexterity','hp','maxHp','gold','items'],[0,0,0,0,0,0,0,0,0,0,[]])
+            setElements(this,['time','name','img','x','y','items'],[0,undefined,'playerR1',canvas.width/2,canvas.height/2,[]])
         }
         draw(){
             const directions = {
@@ -78,6 +76,14 @@ const classes = {
             }
             ctx.drawImage(grabImage(this.img),this.x,this.y,200*(width/total),200*(height/total))
         }
+        changeVar(name,val){
+            this[name] = val
+            data.setItem('player',this)
+        }
+        storeItem(item){
+            this.items.push(item)
+            data.setItem('player',this)
+        }
     },
     button: class{
         constructor(x,y,w,h,txt,color,font,fn,centered=false,doDraw=true){
@@ -111,7 +117,7 @@ const classes = {
 class Storage{
     constructor(info){
         this.info = info
-        const vars = [['player','class'],['page','mainMenu'],['CCstep',0]]
+        const vars = [['player','class'],['page','mainMenu']]
         for(let i=0; i<vars.length; i++){
             if(this.getItem(vars[i][0]) == null){
                 if(vars[i][1] == 'class'){
@@ -187,38 +193,74 @@ function autoSize(txt,fontsize,y){
     let endChar = 0
     ctx.font = fontsize+'px Arial'
     const width = ctx.measureText(txt).width
-    if(width>=canvas.width-100){
-        lines = Math.ceil(width/(canvas.width-100))
+    if(width>=canvas.width-50){
+        lines = Math.ceil(width/(canvas.width-50))
     }
     for(let i=0; i<lines; i++){
         const chars = Math.ceil(txt.length/lines)
-        if(chars>=txt.length-startChar){
+        if(i == lines-1){
             endChar = txt.length
         }
         else{
-            endChar = txt.indexOf(' ',chars)
+            endChar = txt.indexOf(' ',startChar+chars-5)
         }
         const newTxt = txt.slice(startChar,endChar)
         const w = ctx.measureText(newTxt).width
         ctx.fillText(newTxt,canvas.width/2-w/2,y+fontsize*i)
-        startChar = endChar+1
+        startChar = endChar
     }
 }
 class Renderer{
     constructor(){
         const b = classes['button']
+        function backButton(page,show=true){
+            return new b(canvas.width/2,canvas.height-100,0,0,'Back','#ff0000',48,function(){data.changeVar('page',page)},true,show)
+        }
+        function stat(){
+            data.player.changeVar(this.txt.toLowerCase(),data.roll.total)
+            renderer.buttons['CC2'].splice(renderer.buttons['CC2'].findIndex(B => B.txt == this.txt),1)
+            data.changeVar('roll',renderer.rollTheDice(4,6,true))
+            if(renderer.buttons['CC2'].length == 0){
+                data.changeVar('page','CC3')
+                data.changeVar('roll',renderer.rollTheDice(20,6))
+                data.player.changeVar('gold',data.roll.total)
+            }
+        }
         this.buttons = {
             'mainMenu': [
-                new b(canvas.width/2-175/(1920/canvas.width),canvas.height/2-105/(1080/canvas.height),300/(1920/canvas.width),115/(1080/canvas.height),'Play','#00ff00',48,function(){data.changeVar('page','town')},true,false),
+                new b(canvas.width/2-175/(1920/canvas.width),canvas.height/2-105/(1080/canvas.height),300/(1920/canvas.width),115/(1080/canvas.height),'Play','#00ff00',48,function(){data.changeVar('page','CC1'); data.changeVar('roll',renderer.rollTheDice(4,6,true))},true,false),
                 new b(canvas.width/2-310/(1920/canvas.width),canvas.height/2+18,575/(1920/canvas.width),100/(1080/canvas.height),'Settings','#00ff00',48,function(){data.changeVar('page','settings')},false,false),
                 new b(canvas.width/2-260/(1920/canvas.width),canvas.height/2+135/(1080/canvas.height),485/(1920/canvas.width),100/(1080/canvas.height),'Credits','#00ff00',48,function(){data.changeVar('page','credits')},false,false),
                 new b(canvas.width/2-375/(1920/canvas.width),canvas.height/2+245/(1080/canvas.height),710/(1920/canvas.width),105/(1080/canvas.height),'How','#00ff00',48,function(){data.changeVar('page','how')},false,false)
             ],
             'town':[],
-            'how':[new b(canvas.width/2,canvas.height-100,0,0,'Back','#ff0000',48,function(){data.changeVar('page','mainMenu')},true)],
-            'credits':[new b(canvas.width/2,canvas.height-100,0,0,'Back','#ff0000',48,function(){data.changeVar('page','mainMenu')},true)],
-            'settings':[new b(canvas.width/2,canvas.height-100,0,0,'Back','#ff0000',48,function(){data.changeVar('page','mainMenu')},true)],
-            'characterCreation':[]
+            'how':[backButton('mainMenu')],
+            'credits':[backButton('mainMenu')],
+            'settings':[backButton('mainMenu')],
+            'CC1': [new b(canvas.width/2,canvas.height-100,0,0,'Next','#00ff00',48,function(){data.changeVar('page','CC2')},true)],
+            'CC2': [
+                new b(canvas.width/2-316,250,0,0,'Strength','#00ff00',36,stat,false),
+                new b(canvas.width/2-160,250,0,0,'Dexterity','#00ff00',36,stat,false),
+                new b(canvas.width/2+2,250,0,0,'Wisdom','#00ff00',36,stat,false),
+                new b(canvas.width/2+152,250,0,0,'Charisma','#00ff00',36,stat,false),
+                new b(canvas.width/2-298,306,0,0,'Intelligence','#00ff00',36,stat,false),
+                new b(canvas.width/2-96,306,0,0,'Constitution','#00ff00',36,stat,false),
+                new b(canvas.width/2+114,306,0,0,'Perception','#00ff00',36,stat,false)
+            ],
+            'CC3': [new b(canvas.width/2,canvas.height-100,0,0,'Next','#00ff00',48,function(){
+                data.changeVar('page','CC4')
+                data.changeVar('roll',renderer.rollTheDice(3,6))
+                data.player.changeVar('hp',data.player.constitution*2+data.roll.total)
+                data.player.changeVar('maxHp',data.player.hp)
+            },true)],
+            'CC4': [new b(canvas.width/2,canvas.height-100,0,0,'Next','#00ff00',48,function(){data.changeVar('page','CC5')},true)],
+            'CC5': [new b(canvas.width/2,canvas.height-100,0,0,'Next','#00ff00',48,function(){data.changeVar('page','town')},true)]
+        }
+        const stats = ['Strength','Constitution','Perception','Intelligence','Wisdom','Charisma','Dexterity']
+        for(let i=0; i<stats.length; i++){
+            if(data.player[stats[i].toLowerCase()] != undefined){
+                this.buttons['CC2'].splice(this.buttons['CC2'].findIndex(B => B.txt == stats[i]),1)
+            }
         }
     }
     draw(){
@@ -248,14 +290,47 @@ class Renderer{
             autoSize(artists[i],36,225+i*36)
         }
     }
-    characterCreation(){
-        if(data.CCstep == 0){
-            ctx.fillStyle = '#0000000'
-            ctx.font = '36px Arial'
+    CC1(){
+        ctx.fillStyle = '#000000'
+        autoSize('Welcome to Dungeon Adventure! Before we begin we must create your character, where we will determine your starting attributes, hit-points, and gold. Fisrt we will determine your attributes by rolling 4 six-sided dice, adding the 3 highest numbers, then assigning it to one of your attributes and repeating this process until all your attributes have been assigned.',36,100)
+    }
+    CC2(){
+        ctx.fillStyle = '#000000'
+        autoSize('You rolled a '+data.roll.dice+'. So the 3 highest numbers comes to a '+data.roll.total+'. Where would you like to assign your value of '+data.roll.total+'?',36,100)
+    }
+    CC3(){
+        ctx.fillStyle = '#000000'
+        autoSize('Rolling for your starting gold you get '+data.roll.total+' gold(the sum of 20 six-sided dice)',36,100)
+    }
+    CC4(){
+        ctx.fillStyle = '#000000'
+        autoSize('Rolling for your starting hitpoints you got '+data.roll.dice+' for a total of '+data.roll.total+'. Plus your constitution of '+data.player.constitution+' times 2 adds to a grand total of '+data.player.hp+'. So your starting hitpoints is '+data.player.hp+'.',36,100)
+    }
+    CC5(){
+        ctx.fillStyle = '#000000'
+        autoSize('Congratulations, you have finished creating your character!',36,60)
+        autoSize('Your stats:',36,120)
+        const stats = ['Strength','Constitution','Intelligence','Dexterity','Perception','Wisdom','Charisma','Gold','HP']
+        for(let i=0; i<stats.length; i++){
+            autoSize(stats[i]+' -- '+data.player[stats[i].toLowerCase()],36,160+i*40)
         }
     }
     onClick(e){
         this.buttons[data.page].find(b => b.wasClicked(e))
+    }
+    rollTheDice(dice,sides,stats=false){
+        const rolls = []
+        for(let i=0; i<dice; i++){
+            rolls.push(1+Math.floor(Math.random()*(sides-1)))
+        }
+        let sum = 0
+        for(let i=0; i<dice; i++){
+            sum += rolls[i]
+        }
+        if(stats == true){
+            sum -= Math.min(...rolls)
+        }
+        return {dice:rolls, total:sum}
     }
 }
 const data = new Storage(window.localStorage)
