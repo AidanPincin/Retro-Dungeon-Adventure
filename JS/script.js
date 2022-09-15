@@ -112,6 +112,46 @@ const classes = {
                 return true
             }
         }
+    },
+    monster: class{
+        constructor(name,x,y){
+            this.name = name
+            this.x = x
+            this.y = y
+            this.time = 0
+            this.direction = 'U'
+        }
+        draw(){
+            const directions = ['U','R','D','L']
+            this.time += 1
+            if(this.direction == 'U'){
+                this.y -= 5
+            }
+            if(this.direction == 'D'){
+                this.y += 5
+            }
+            if(this.direction == 'R'){
+                this.x += 5
+            }
+            if(this.direction == 'L'){
+                this.x -= 5
+            }
+            if(this.time<=15 || (this.time >= 45 && this.time <= 60) || (this.time>=75 && this.time<=90) || (this.time>=105 && this.time<=120)){
+                ctx.drawImage(grabImage(this.name+this.direction+2),this.x,this.y,100,100)
+            }
+            else{
+                ctx.drawImage(grabImage(this.name+this.direction+3),this.x,this.y,100,100)
+            }
+            if(this.time == 120){
+                if(this.direction == 'L'){
+                    this.direction = 'U'
+                }
+                else{
+                    this.direction = directions[directions.findIndex(d => d == this.direction)+1]
+                }
+                this.time = 0
+            }
+        }
     }
 }
 class Storage{
@@ -212,6 +252,7 @@ function autoSize(txt,fontsize,y){
 }
 class Renderer{
     constructor(){
+        this.monster = new classes['monster']('skeleton',canvas.width-700,600)
         const b = classes['button']
         function backButton(page,show=true){
             return new b(canvas.width/2,canvas.height-100,0,0,'Back','#ff0000',48,function(){data.changeVar('page',page)},true,show)
@@ -272,6 +313,7 @@ class Renderer{
     }
     town(){
         data.player.draw()
+        this.monster.draw()
     }
     how(){
         ctx.fillStyle = '#000000'
@@ -338,7 +380,7 @@ let renderer = new Renderer()
 let loaded = 0
 const id = setInterval(() => {loaded = loading(); if(loaded == maxLoad()){clearInterval(id)}})
 function mainLoop(){
-    ctx.fillStyle = '#ffffff'
+    ctx.fillStyle = '#696969'
     ctx.fillRect(0,0,canvas.width,canvas.height)
     if(loaded<maxLoad()){
         ctx.fillStyle = '#00ff00'
